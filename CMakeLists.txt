@@ -1,21 +1,35 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.13)
 
-project(exampleLib CXX ASM)
+include(pico_sdk_import.cmake)
 
+project(SmartHomeCore C CXX ASM)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 20)
+
+project(displayAPI C CXX ASM)
+
+set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 20)
 
 pico_sdk_init()
 
-add_library( exampleLib
-    example.hpp
-    example.cpp
-    )
+add_executable(displayAPI
+    displayAPI.cpp
+)
 
-target_link_libraries( exampleLib
+# Add pico_stdlib library and hardware libraries
+target_link_libraries(displayAPI 
   pico_stdlib 
-  
-  # Using Pico W
+  hardware_spi 
+  hardware_gpio 
   pico_cyw43_arch_none
 )
 
-target_include_directories(exampleLib PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+# enable usb output, disable uart output
+pico_enable_stdio_usb(displayAPI 1)
+pico_enable_stdio_uart(displayAPI 0)
+
+
+#make uf2
+pico_add_extra_outputs(displayAPI)
