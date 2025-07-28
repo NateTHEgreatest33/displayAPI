@@ -16,8 +16,8 @@
 #define PIN_BL   0
 
 
-ST7789VW::ST7789VW(spi_inst_t* spi, uint16_t width, uint16_t height, uint16_t x_offset, uint16_t y_offset, uint cs_pin, uint dc_pin, uint rst_pin, uint bl_pin)
-    : _spi(spi), _width(width), _height(height), _x_offset(x_offset), _y_offset(y_offset), _cs_pin(cs_pin), _dc_pin(dc_pin), _rst_pin(rst_pin), _bl_pin(bl_pin) {}
+ST7789VW::ST7789VW(spi_inst_t* spi, DisplayProperties props, uint cs_pin, uint dc_pin, uint rst_pin, uint bl_pin)
+    : _spi(spi), _props(props), _cs_pin(cs_pin), _dc_pin(dc_pin), _rst_pin(rst_pin), _bl_pin(bl_pin) {}
 
 void ST7789VW::init() {
     gpio_init(_cs_pin);
@@ -61,10 +61,10 @@ void ST7789VW::init() {
 }
 
 void ST7789VW::setWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
-    uint16_t x_start = x + _x_offset;
-    uint16_t y_start = y + _y_offset;
-    uint16_t x_end = x + width - 1 + _x_offset;
-    uint16_t y_end = y + height - 1 + _y_offset;
+    uint16_t x_start = x + _props.x_offset;
+    uint16_t y_start = y + _props.y_offset;
+    uint16_t x_end = x + width - 1 + _props.x_offset;
+    uint16_t y_end = y + height - 1 + _props.y_offset;
 
     sendCommand(ST7789VW_CMD::CASET);
     uint8_t caset_data[] = {(uint8_t)(x_start >> 8), (uint8_t)x_start, (uint8_t)(x_end >> 8), (uint8_t)x_end};
@@ -84,8 +84,8 @@ void ST7789VW::drawPixel(uint16_t x, uint16_t y, uint16_t color) {
 }
 
 void ST7789VW::fill(uint16_t color) {
-    setWindow(0, 0, _width, _height);
-    uint32_t num_pixels = _width * _height;
+    setWindow(0, 0, _props.width, _props.height);
+    uint32_t num_pixels = _props.width * _props.height;
     uint8_t pixel_data[] = {(uint8_t)(color >> 8), (uint8_t)color};
 
     for (uint32_t i = 0; i < num_pixels; ++i) {
@@ -94,7 +94,7 @@ void ST7789VW::fill(uint16_t color) {
 }
 
 void ST7789VW::drawChar(uint16_t x, uint16_t y, char c, uint16_t color) {
-    if (x > _width - 8 || y > _height - 8) {
+    if (x > _props.width - 8 || y > _props.height - 8) {
         return;
     }
 
@@ -158,7 +158,8 @@ int main() {
     gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
     gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
 
-    ST7789VW display(SPI_PORT, 240, 320, 50, 40, PIN_CS, PIN_DC, PIN_RST, PIN_BL); //i think the spacing is 134-->AFTER 50 offset
+    DisplayProperties props = {135, 240, 240, 320, 40, 53};
+    ST7789VW display(SPI_PORT, props, PIN_CS, PIN_DC, PIN_RST, PIN_BL);
     display.init();
 
     while (1) {

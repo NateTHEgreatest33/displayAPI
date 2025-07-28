@@ -18,9 +18,18 @@ enum class ST7789VW_CMD : uint8_t {
     MADCTL = 0x36,
 };
 
+typedef struct {
+    uint16_t width;
+    uint16_t height;
+    uint16_t map_width;
+    uint16_t map_height;
+    uint16_t x_offset;
+    uint16_t y_offset;
+} DisplayProperties;
+
 class ST7789VW {
 public:
-    ST7789VW(spi_inst_t* spi, uint16_t width, uint16_t height, uint16_t x_offset, uint16_t y_offset, uint cs_pin, uint dc_pin, uint rst_pin, uint bl_pin);
+    ST7789VW(spi_inst_t* spi, DisplayProperties props, uint cs_pin, uint dc_pin, uint rst_pin, uint bl_pin);
 
     void init();
     void setWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t height);
@@ -43,10 +52,7 @@ private:
     uint _rst_pin;
     uint _bl_pin;
 
-    uint16_t _width;
-    uint16_t _height;
-    uint16_t _x_offset;
-    uint16_t _y_offset;
+    DisplayProperties _props;
 };
 
 #endif // DISPLAY_API_HPP
