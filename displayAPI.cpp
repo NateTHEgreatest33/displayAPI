@@ -202,13 +202,13 @@ void ST7789VW::set_rotation(Rotation rotation) {
             _props.width = _default_props.height;
             _props.height = _default_props.width;
             _props.x_offset = _default_props.y_offset;
-            _props.y_offset = _default_props.x_offset;
+            _props.y_offset = (_default_props.x_offset + 1);
             break;
         case Rotation::ROTATION_180:
             madctl_data = 0xC0;
             _props.width = _default_props.width;
             _props.height = _default_props.height;
-            _props.x_offset = _default_props.x_offset;
+            _props.x_offset = (_default_props.x_offset + 1);
             _props.y_offset = _default_props.y_offset;
             break;
         case Rotation::ROTATION_270:
@@ -232,17 +232,97 @@ int main() {
     gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
     gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
 
-    DisplayProperties props = {135, 240, 240, 320, 50, 40};
+
+
+
+int rot_var = (int)ST7789VW::Rotation::ROTATION_0;
+
+while(1)
+    {
+    {
+    DisplayProperties props1 = {240, 320, 240, 320, 0, 0};
+    ST7789VW display1(SPI_PORT, props1, PIN_CS, PIN_DC, PIN_RST, PIN_BL);
+    display1.init();
+    sleep_ms(1000);
+    display1.set_rotation( ST7789VW::Rotation::ROTATION_0 );
+    display1.fill( 0xFFFF ); //fill entire map white
+    sleep_ms(100);
+    }
+
+
+    {
+    DisplayProperties props = {135, 240, 240, 320, 52, 40}; //52,40 confirmed correct //53,40 works
     ST7789VW display(SPI_PORT, props, PIN_CS, PIN_DC, PIN_RST, PIN_BL);
     display.init();
-    display.set_rotation(ST7789VW::Rotation::ROTATION_270);
+    display.set_rotation( ST7789VW::Rotation::ROTATION_90 );
+    display.fill( 0x0000 );
+    display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
+    sleep_ms(100);
+    }
 
+//rotation 90 (53,40)
+//rotation 180 (53,40)
+//rotation 270 (52,40)
+//rotation 0    (52,40)
+
+
+
+    // {
+    // DisplayProperties props = {135, 240, 240, 320, 52, 40}; //52,40 confirmed correct
+    // ST7789VW display(SPI_PORT, props, PIN_CS, PIN_DC, PIN_RST, PIN_BL);
+    // display.init();
+    // display.set_rotation( ST7789VW::Rotation::ROTATION_180 );
+    // display.fill( 0x0000 );
+    // }
+
+    // {
+    // DisplayProperties props = {135, 240, 240, 320, 52, 40}; //52,40 confirmed correct
+    // ST7789VW display(SPI_PORT, props, PIN_CS, PIN_DC, PIN_RST, PIN_BL);
+    // display.init();
+    // display.set_rotation( ST7789VW::Rotation::ROTATION_270 );
+    // display.fill( 0x0000 );
+    // }
+
+
+    }
+
+
+
+    DisplayProperties props = {135, 240, 240, 320, 52, 40}; //52, 40 is confirmed correct
+    ST7789VW display(SPI_PORT, props, PIN_CS, PIN_DC, PIN_RST, PIN_BL);
+    display.init();
+    display.set_rotation(ST7789VW::Rotation::ROTATION_0);
+    display.fill( 0x0000 );
     while (1) {
         // display.fill(0x0000);
         display.clear_screen();
         sleep_ms(100);
-        display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);
+        // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works 
+        display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
         sleep_ms(2000);
+
+        display.set_rotation(ST7789VW::Rotation::ROTATION_90);
+        display.clear_screen();
+        sleep_ms(100);
+        // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works 
+        display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
+        sleep_ms(2000); //doesnt
+
+        display.set_rotation(ST7789VW::Rotation::ROTATION_180);
+        display.clear_screen();
+        sleep_ms(100);
+        // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works 
+        display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
+        sleep_ms(2000);
+
+        display.set_rotation(ST7789VW::Rotation::ROTATION_270);
+        display.clear_screen();
+        sleep_ms(100);
+        // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works 
+        display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
+        sleep_ms(2000);
+
+
     }
 
     return 0;
