@@ -38,7 +38,8 @@ public:
     void drawChar(uint16_t x, uint16_t y, char c, uint16_t color);
     void drawText(uint16_t x, uint16_t y, const char* text, uint16_t color);
     void clear_screen(void);
-    bool write_string(uint16_t x, uint16_t y, const char* text, uint16_t color, bool word_wrap = false);
+    bool write_string_pos(uint16_t x, uint16_t y, const char* text, uint16_t color, bool word_wrap = false);
+    bool write_string(const char* text, uint16_t color, bool newline = false, bool word_wrap = false);
     
     enum class Rotation {
         ROTATION_0,
@@ -62,6 +63,8 @@ private:
     DisplayProperties _props;
     DisplayProperties _default_props;
     Rotation _rotation;
+    uint16_t _last_x;
+    uint16_t _last_y;
 };
 
 #endif // DISPLAY_API_HPP

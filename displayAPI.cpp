@@ -17,7 +17,7 @@
 
 
 ST7789VW::ST7789VW(spi_inst_t* spi, DisplayProperties props, uint cs_pin, uint dc_pin, uint rst_pin, uint bl_pin)
-    : _spi(spi), _props(props), _default_props(props), _cs_pin(cs_pin), _dc_pin(dc_pin), _rst_pin(rst_pin), _bl_pin(bl_pin) {}
+    : _spi(spi), _props(props), _default_props(props), _cs_pin(cs_pin), _dc_pin(dc_pin), _rst_pin(rst_pin), _bl_pin(bl_pin), _last_x(0), _last_y(0) {}
 
 void ST7789VW::init() {
     gpio_init(_cs_pin);
@@ -142,7 +142,7 @@ void ST7789VW::clear_screen() {
     fill(0x0000); //black color
 }
 
-bool ST7789VW::write_string(uint16_t x, uint16_t y, const char* text, uint16_t color, bool word_wrap)
+bool ST7789VW::write_string_pos(uint16_t x, uint16_t y, const char* text, uint16_t color, bool word_wrap)
 {
     uint16_t current_x = x;
     uint16_t current_y = y;
@@ -182,7 +182,22 @@ bool ST7789VW::write_string(uint16_t x, uint16_t y, const char* text, uint16_t c
             i++;
         }
     }
+    _last_x = current_x;
+    _last_y = current_y;
     return true;
+}
+
+bool ST7789VW::write_string(const char* text, uint16_t color, bool newline, bool word_wrap)
+{
+    uint16_t start_x = _last_x;
+    uint16_t start_y = _last_y;
+
+    if (newline) {
+        start_x = 0;
+        start_y += 8;
+    }
+
+    return write_string_pos(start_x, start_y, text, color, word_wrap);
 }
 
 void ST7789VW::set_rotation(Rotation rotation) {
@@ -256,7 +271,8 @@ while(1)
     display.init();
     display.set_rotation( ST7789VW::Rotation::ROTATION_90 );
     display.fill( 0x0000 );
-    display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
+    display.write_string("Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true, true);// this works 
+    display.write_string("Hello, World2! This is a very long string that should wrap around to the next line.", 0xFFFF, true, true);
     sleep_ms(100);
     }
 
@@ -288,42 +304,42 @@ while(1)
 
 
 
-    DisplayProperties props = {135, 240, 240, 320, 52, 40}; //52, 40 is confirmed correct
-    ST7789VW display(SPI_PORT, props, PIN_CS, PIN_DC, PIN_RST, PIN_BL);
-    display.init();
-    display.set_rotation(ST7789VW::Rotation::ROTATION_0);
-    display.fill( 0x0000 );
-    while (1) {
-        // display.fill(0x0000);
-        display.clear_screen();
-        sleep_ms(100);
-        // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works 
-        display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
-        sleep_ms(2000);
+    // DisplayProperties props = {135, 240, 240, 320, 52, 40}; //52, 40 is confirmed correct
+    // ST7789VW display(SPI_PORT, props, PIN_CS, PIN_DC, PIN_RST, PIN_BL);
+    // display.init();
+    // display.set_rotation(ST7789VW::Rotation::ROTATION_0);
+    // display.fill( 0x0000 );
+    // while (1) {
+    //     // display.fill(0x0000);
+    //     display.clear_screen();
+    //     sleep_ms(100);
+    //     // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works 
+    //     display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
+    //     sleep_ms(2000);
 
-        display.set_rotation(ST7789VW::Rotation::ROTATION_90);
-        display.clear_screen();
-        sleep_ms(100);
-        // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works 
-        display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
-        sleep_ms(2000); //doesnt
+    //     display.set_rotation(ST7789VW::Rotation::ROTATION_90);
+    //     display.clear_screen();
+    //     sleep_ms(100);
+    //     // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works 
+    //     display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
+    //     sleep_ms(2000); //doesnt
 
-        display.set_rotation(ST7789VW::Rotation::ROTATION_180);
-        display.clear_screen();
-        sleep_ms(100);
-        // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works 
-        display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
-        sleep_ms(2000);
+    //     display.set_rotation(ST7789VW::Rotation::ROTATION_180);
+    //     display.clear_screen();
+    //     sleep_ms(100);
+    //     // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works 
+    //     display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
+    //     sleep_ms(2000);
 
-        display.set_rotation(ST7789VW::Rotation::ROTATION_270);
-        display.clear_screen();
-        sleep_ms(100);
-        // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works 
-        display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
-        sleep_ms(2000);
+    //     display.set_rotation(ST7789VW::Rotation::ROTATION_270);
+    //     display.clear_screen();
+    //     sleep_ms(100);
+    //     // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works 
+    //     display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
+    //     sleep_ms(2000);
 
 
-    }
+    // }
 
     return 0;
 }
