@@ -142,9 +142,46 @@ void ST7789VW::clear_screen() {
     fill(0x0000); //black color
 }
 
-bool ST7789VW::write_string(void)
+bool ST7789VW::write_string(uint16_t x, uint16_t y, const char* text, uint16_t color, bool word_wrap)
 {
-    //goal is to wrap string & hold index for next string write
+    uint16_t current_x = x;
+    uint16_t current_y = y;
+    int i = 0;
+    while (text[i]) {
+        if (word_wrap) {
+            const char* word_start = &text[i];
+            int word_len = 0;
+            while (text[i] && text[i] != ' ') {
+                word_len++;
+                i++;
+            }
+
+            if (current_x + (word_len * 8) > _props.width) {
+                current_x = x;
+                current_y += 8;
+            }
+
+            for (int j = 0; j < word_len; j++) {
+                drawChar(current_x, current_y, word_start[j], color);
+                current_x += 8;
+            }
+
+            if (text[i] == ' ') {
+                drawChar(current_x, current_y, ' ', color);
+                current_x += 8;
+                i++;
+            }
+
+        } else {
+            if (current_x + 8 > _props.width) {
+                current_x = x;
+                current_y += 8;
+            }
+            drawChar(current_x, current_y, text[i], color);
+            current_x += 8;
+            i++;
+        }
+    }
     return true;
 }
 
@@ -158,7 +195,7 @@ int main() {
     gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
     gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
 
-    DisplayProperties props = {135, 240, 240, 320, 40, 53};
+    DisplayProperties props = {134, 240, 240, 320, 50, 40};
     ST7789VW display(SPI_PORT, props, PIN_CS, PIN_DC, PIN_RST, PIN_BL);
     display.init();
 
@@ -166,7 +203,7 @@ int main() {
         // display.fill(0x0000);
         display.clear_screen();
         sleep_ms(100);
-        display.drawText(0, 0, "4Hello, World!", 0xFFFF);
+        display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);
         sleep_ms(2000);
     }
 

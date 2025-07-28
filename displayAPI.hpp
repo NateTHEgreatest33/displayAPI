@@ -38,7 +38,7 @@ public:
     void drawChar(uint16_t x, uint16_t y, char c, uint16_t color);
     void drawText(uint16_t x, uint16_t y, const char* text, uint16_t color);
     void clear_screen(void);
-    bool write_string(void);
+    bool write_string(uint16_t x, uint16_t y, const char* text, uint16_t color, bool word_wrap = false);
     void set_rotation(void);
 
 private:
