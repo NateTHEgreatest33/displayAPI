@@ -17,7 +17,7 @@
 
 
 ST7789VW::ST7789VW(spi_inst_t* spi, DisplayProperties props, uint cs_pin, uint dc_pin, uint rst_pin, uint bl_pin)
-    : _spi(spi), _props(props), _cs_pin(cs_pin), _dc_pin(dc_pin), _rst_pin(rst_pin), _bl_pin(bl_pin) {}
+    : _spi(spi), _props(props), _default_props(props), _cs_pin(cs_pin), _dc_pin(dc_pin), _rst_pin(rst_pin), _bl_pin(bl_pin) {}
 
 void ST7789VW::init() {
     gpio_init(_cs_pin);
@@ -185,7 +185,44 @@ bool ST7789VW::write_string(uint16_t x, uint16_t y, const char* text, uint16_t c
     return true;
 }
 
-void ST7789VW::set_rotation(void){}
+void ST7789VW::set_rotation(Rotation rotation) {
+    _rotation = rotation;
+    uint8_t madctl_data;
+
+    switch (rotation) {
+        case Rotation::ROTATION_0:
+            madctl_data = 0x00;
+            _props.width = _default_props.width;
+            _props.height = _default_props.height;
+            _props.x_offset = _default_props.x_offset;
+            _props.y_offset = _default_props.y_offset;
+            break;
+        case Rotation::ROTATION_90:
+            madctl_data = 0x60;
+            _props.width = _default_props.height;
+            _props.height = _default_props.width;
+            _props.x_offset = _default_props.y_offset;
+            _props.y_offset = _default_props.x_offset;
+            break;
+        case Rotation::ROTATION_180:
+            madctl_data = 0xC0;
+            _props.width = _default_props.width;
+            _props.height = _default_props.height;
+            _props.x_offset = _default_props.x_offset;
+            _props.y_offset = _default_props.y_offset;
+            break;
+        case Rotation::ROTATION_270:
+            madctl_data = 0xA0;
+            _props.width = _default_props.height;
+            _props.height = _default_props.width;
+            _props.x_offset = _default_props.y_offset;
+            _props.y_offset = _default_props.x_offset;
+            break;
+    }
+
+    sendCommand(ST7789VW_CMD::MADCTL);
+    sendData(&madctl_data, 1);
+}
 
 int main() {
     stdio_init_all();
@@ -195,9 +232,10 @@ int main() {
     gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
     gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
 
-    DisplayProperties props = {134, 240, 240, 320, 50, 40};
+    DisplayProperties props = {135, 240, 240, 320, 50, 40};
     ST7789VW display(SPI_PORT, props, PIN_CS, PIN_DC, PIN_RST, PIN_BL);
     display.init();
+    display.set_rotation(ST7789VW::Rotation::ROTATION_270);
 
     while (1) {
         // display.fill(0x0000);

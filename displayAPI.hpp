@@ -39,7 +39,14 @@ public:
     void drawText(uint16_t x, uint16_t y, const char* text, uint16_t color);
     void clear_screen(void);
     bool write_string(uint16_t x, uint16_t y, const char* text, uint16_t color, bool word_wrap = false);
-    void set_rotation(void);
+    
+    enum class Rotation {
+        ROTATION_0,
+        ROTATION_90,
+        ROTATION_180,
+        ROTATION_270
+    };
+    void set_rotation(Rotation rotation);
 
 private:
     void sendCommand(ST7789VW_CMD cmd);
@@ -53,6 +60,8 @@ private:
     uint _bl_pin;
 
     DisplayProperties _props;
+    DisplayProperties _default_props;
+    Rotation _rotation;
 };
 
 #endif // DISPLAY_API_HPP
