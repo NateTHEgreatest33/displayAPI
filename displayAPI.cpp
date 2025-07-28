@@ -1,4 +1,5 @@
 #include "displayAPI.hpp"
+#include "font.hpp"
 #include "hardware/gpio.h"
 #include <stdio.h>
 
@@ -16,14 +17,6 @@
 #define CMD_MADCTL 0x36
 
 // SPI Defines
-// #define SPI_PORT spi0
-// #define PIN_MISO 4
-// #define PIN_CS   5
-// #define PIN_SCK  6
-// #define PIN_MOSI 7
-// #define PIN_RST  8
-// #define PIN_DC   9
-// #define PIN_BL   10
 #define SPI_PORT spi0
 #define PIN_MISO 0
 #define PIN_CS   17
@@ -34,21 +27,8 @@
 #define PIN_BL   0
 
 
-// const struct st7789_config lcd_config = {
-//     .spi      = spi0_hw, //works
-//     // .gpio_din = 19,
-//     .gpio_din = 7, //works
-//     // .gpio_clk = 18, 
-//     .gpio_clk = 6,  //works
-//     .gpio_cs  = 17,
-//     .gpio_dc  = 20,
-//     .gpio_rst = 21,
-//     .gpio_bl  = 0, //not used?
-// };
-
-
-ST7789VW::ST7789VW(spi_inst_t* spi, uint cs_pin, uint dc_pin, uint rst_pin, uint bl_pin)
-    : _spi(spi), _cs_pin(cs_pin), _dc_pin(dc_pin), _rst_pin(rst_pin), _bl_pin(bl_pin) {}
+ST7789VW::ST7789VW(spi_inst_t* spi, uint16_t width, uint16_t height, uint16_t x_offset, uint16_t y_offset, uint cs_pin, uint dc_pin, uint rst_pin, uint bl_pin)
+    : _spi(spi), _width(width), _height(height), _x_offset(x_offset), _y_offset(y_offset), _cs_pin(cs_pin), _dc_pin(dc_pin), _rst_pin(rst_pin), _bl_pin(bl_pin) {}
 
 void ST7789VW::init() {
     gpio_init(_cs_pin);
@@ -92,15 +72,17 @@ void ST7789VW::init() {
 }
 
 void ST7789VW::setWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
-    uint16_t x_end = x + width - 1;
-    uint16_t y_end = y + height - 1;
+    uint16_t x_start = x + _x_offset;
+    uint16_t y_start = y + _y_offset;
+    uint16_t x_end = x + width - 1 + _x_offset;
+    uint16_t y_end = y + height - 1 + _y_offset;
 
     sendCommand(CMD_CASET);
-    uint8_t caset_data[] = {(uint8_t)(x >> 8), (uint8_t)x, (uint8_t)(x_end >> 8), (uint8_t)x_end};
+    uint8_t caset_data[] = {(uint8_t)(x_start >> 8), (uint8_t)x_start, (uint8_t)(x_end >> 8), (uint8_t)x_end};
     sendData(caset_data, sizeof(caset_data));
 
     sendCommand(CMD_RASET);
-    uint8_t raset_data[] = {(uint8_t)(y >> 8), (uint8_t)y, (uint8_t)(y_end >> 8), (uint8_t)y_end};
+    uint8_t raset_data[] = {(uint8_t)(y_start >> 8), (uint8_t)y_start, (uint8_t)(y_end >> 8), (uint8_t)y_end};
     sendData(raset_data, sizeof(raset_data));
 
     sendCommand(CMD_RAMWR);
@@ -113,8 +95,8 @@ void ST7789VW::drawPixel(uint16_t x, uint16_t y, uint16_t color) {
 }
 
 void ST7789VW::fill(uint16_t color) {
-    setWindow(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
-    uint32_t num_pixels = DISPLAY_WIDTH * DISPLAY_HEIGHT;
+    setWindow(0, 0, _width, _height);
+    uint32_t num_pixels = _width * _height;
     uint8_t pixel_data[] = {(uint8_t)(color >> 8), (uint8_t)color};
 
     for (uint32_t i = 0; i < num_pixels; ++i) {
@@ -122,6 +104,28 @@ void ST7789VW::fill(uint16_t color) {
     }
 }
 
+void ST7789VW::drawChar(uint16_t x, uint16_t y, char c, uint16_t color) {
+    if (x > _width - 8 || y > _height - 8) {
+        return;
+    }
+
+    for (int i = 0; i < 8; i++) {
+        uint8_t line = font[(int)c][i];
+        for (int j = 0; j < 8; j++) {
+            if ((line >> (7 - j)) & 1) {
+                drawPixel(x + j, y + i, color);
+            }
+        }
+    }
+}
+
+void ST7789VW::drawText(uint16_t x, uint16_t y, const char* text, uint16_t color) {
+    int i = 0;
+    while (text[i]) {
+        drawChar(x + (i * 8), y, text[i], color);
+        i++;
+    }
+}
 
 void ST7789VW::sendCommand(uint8_t cmd) {
     gpio_put(_cs_pin, 0);
@@ -157,20 +161,27 @@ int main() {
     gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
     gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
 
-    ST7789VW display(SPI_PORT, PIN_CS, PIN_DC, PIN_RST, PIN_BL);
+    ST7789VW display(SPI_PORT, 240, 320, 50, 40, PIN_CS, PIN_DC, PIN_RST, PIN_BL);
     display.init();
 
     while (1) {
-        display.fill(0xFFFF); // White
-        sleep_ms(1000);
-        display.fill(0x001F); // Blue
-        sleep_ms(1000);
+        // display.fill(0x0000);
+        display.clear_screen();
+        sleep_ms(100);
+        display.drawText(10, 10, "Hello, World!", 0xFFFF);
+        sleep_ms(2000);
+
         display.fill(0xF800); // Red
-        sleep_ms(1000);
-        display.fill(0x07E0); // Green
-        sleep_ms(1000);
-        display.clear_screen(); //white?
-        sleep_ms(1000);
+        sleep_ms(2000);
+
+        // display.fill(0xF800); // Red
+        display.drawText(100, 100, "1This is a test.", 0x07E0); // Green
+        // display.drawText(100, 50, "2This is a test.", 0x07E0); // Green
+        // (x, y, text, color )
+        display.drawText(50, 70, "3This is a test1223445444.", 0x07E0); // Green
+        display.drawText(50, 50, "3This is a test.", 0x07E0); // Green
+        display.drawText(50, 40, "3This is a test.", 0x07E0); // this is the top corner?
+        sleep_ms(2000);
     }
 
     return 0;
