@@ -3,18 +3,7 @@
 #include "hardware/gpio.h"
 #include <stdio.h>
 
-// Commands
-#define CMD_SWRESET 0x01
-#define CMD_SLPOUT 0x11
-#define CMD_NORON 0x13
-#define CMD_INVOFF 0x20
-#define CMD_INVON  0x21 //this inverts collors so that 0xFFFF white and 0x0000 is black
-#define CMD_DISPON 0x29
-#define CMD_CASET 0x2A
-#define CMD_RASET 0x2B
-#define CMD_RAMWR 0x2C
-#define CMD_COLMOD 0x3A
-#define CMD_MADCTL 0x36
+
 
 // SPI Defines
 #define SPI_PORT spi0
@@ -51,23 +40,23 @@ void ST7789VW::init() {
 
     reset();
 
-    sendCommand(CMD_SWRESET);
+    sendCommand(ST7789VW_CMD::SWRESET);
     sleep_ms(150);
 
-    sendCommand(CMD_SLPOUT);
+    sendCommand(ST7789VW_CMD::SLPOUT);
     sleep_ms(50);
 
-    sendCommand(CMD_COLMOD);
+    sendCommand(ST7789VW_CMD::COLMOD);
     uint8_t colmod_data[] = {0x55}; // 16-bit/pixel
     sendData(colmod_data, sizeof(colmod_data));
 
-    sendCommand(CMD_MADCTL);
+    sendCommand(ST7789VW_CMD::MADCTL);
     uint8_t madctl_data[] = {0x00};
     sendData(madctl_data, sizeof(madctl_data));
 
-    sendCommand(CMD_NORON);
-    sendCommand(CMD_INVON);
-    sendCommand(CMD_DISPON);
+    sendCommand(ST7789VW_CMD::NORON);
+    sendCommand(ST7789VW_CMD::INVON);
+    sendCommand(ST7789VW_CMD::DISPON);
     sleep_ms(50);
 }
 
@@ -77,15 +66,15 @@ void ST7789VW::setWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t height
     uint16_t x_end = x + width - 1 + _x_offset;
     uint16_t y_end = y + height - 1 + _y_offset;
 
-    sendCommand(CMD_CASET);
+    sendCommand(ST7789VW_CMD::CASET);
     uint8_t caset_data[] = {(uint8_t)(x_start >> 8), (uint8_t)x_start, (uint8_t)(x_end >> 8), (uint8_t)x_end};
     sendData(caset_data, sizeof(caset_data));
 
-    sendCommand(CMD_RASET);
+    sendCommand(ST7789VW_CMD::RASET);
     uint8_t raset_data[] = {(uint8_t)(y_start >> 8), (uint8_t)y_start, (uint8_t)(y_end >> 8), (uint8_t)y_end};
     sendData(raset_data, sizeof(raset_data));
 
-    sendCommand(CMD_RAMWR);
+    sendCommand(ST7789VW_CMD::RAMWR);
 }
 
 void ST7789VW::drawPixel(uint16_t x, uint16_t y, uint16_t color) {
@@ -127,10 +116,11 @@ void ST7789VW::drawText(uint16_t x, uint16_t y, const char* text, uint16_t color
     }
 }
 
-void ST7789VW::sendCommand(uint8_t cmd) {
+void ST7789VW::sendCommand(ST7789VW_CMD cmd) {
+    uint8_t cmd_val = static_cast<uint8_t>(cmd);
     gpio_put(_cs_pin, 0);
     gpio_put(_dc_pin, 0);
-    spi_write_blocking(_spi, &cmd, 1);
+    spi_write_blocking(_spi, &cmd_val, 1);
     gpio_put(_cs_pin, 1);
 }
 
@@ -150,8 +140,15 @@ void ST7789VW::reset() {
 
 void ST7789VW::clear_screen() {
     fill(0x0000); //black color
-
 }
+
+bool ST7789VW::write_string(void)
+{
+    //goal is to wrap string & hold index for next string write
+    return true;
+}
+
+void ST7789VW::set_rotation(void){}
 
 int main() {
     stdio_init_all();
@@ -161,26 +158,14 @@ int main() {
     gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
     gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
 
-    ST7789VW display(SPI_PORT, 240, 320, 50, 40, PIN_CS, PIN_DC, PIN_RST, PIN_BL);
+    ST7789VW display(SPI_PORT, 240, 320, 50, 40, PIN_CS, PIN_DC, PIN_RST, PIN_BL); //i think the spacing is 134-->AFTER 50 offset
     display.init();
 
     while (1) {
         // display.fill(0x0000);
         display.clear_screen();
         sleep_ms(100);
-        display.drawText(10, 10, "Hello, World!", 0xFFFF);
-        sleep_ms(2000);
-
-        display.fill(0xF800); // Red
-        sleep_ms(2000);
-
-        // display.fill(0xF800); // Red
-        display.drawText(100, 100, "1This is a test.", 0x07E0); // Green
-        // display.drawText(100, 50, "2This is a test.", 0x07E0); // Green
-        // (x, y, text, color )
-        display.drawText(50, 70, "3This is a test1223445444.", 0x07E0); // Green
-        display.drawText(50, 50, "3This is a test.", 0x07E0); // Green
-        display.drawText(50, 40, "3This is a test.", 0x07E0); // this is the top corner?
+        display.drawText(0, 0, "4Hello, World!", 0xFFFF);
         sleep_ms(2000);
     }
 

@@ -4,6 +4,20 @@
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 
+enum class ST7789VW_CMD : uint8_t {
+    SWRESET = 0x01,
+    SLPOUT = 0x11,
+    NORON = 0x13,
+    INVOFF = 0x20,
+    INVON = 0x21,
+    DISPON = 0x29,
+    CASET = 0x2A,
+    RASET = 0x2B,
+    RAMWR = 0x2C,
+    COLMOD = 0x3A,
+    MADCTL = 0x36,
+};
+
 class ST7789VW {
 public:
     ST7789VW(spi_inst_t* spi, uint16_t width, uint16_t height, uint16_t x_offset, uint16_t y_offset, uint cs_pin, uint dc_pin, uint rst_pin, uint bl_pin);
@@ -15,9 +29,11 @@ public:
     void drawChar(uint16_t x, uint16_t y, char c, uint16_t color);
     void drawText(uint16_t x, uint16_t y, const char* text, uint16_t color);
     void clear_screen(void);
+    bool write_string(void);
+    void set_rotation(void);
 
 private:
-    void sendCommand(uint8_t cmd);
+    void sendCommand(ST7789VW_CMD cmd);
     void sendData(const uint8_t* data, size_t len);
     void reset();
 
