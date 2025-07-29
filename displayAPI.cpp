@@ -1,11 +1,30 @@
+/*********************************************************************
+*
+*   NAME:
+*       displayAPI.cpp
+*
+*   DESCRIPTION:
+*       API for ST7789VW display
+*
+*   Copyright 2023 Nate Lenze
+*
+*********************************************************************/
+
+/*--------------------------------------------------------------------
+                              INCLUDES
+--------------------------------------------------------------------*/
 #include "displayAPI.hpp"
 #include "font.hpp"
 #include "hardware/gpio.h"
 #include <stdio.h>
 
+/*--------------------------------------------------------------------
+                          GLOBAL NAMESPACES
+--------------------------------------------------------------------*/
 
-
-// SPI Defines
+/*--------------------------------------------------------------------
+                          LITERAL CONSTANTS
+--------------------------------------------------------------------*/
 #define SPI_PORT spi0
 #define PIN_MISO 0
 #define PIN_CS   17
@@ -15,11 +34,63 @@
 #define PIN_DC   20
 #define PIN_BL   0
 
+/*--------------------------------------------------------------------
+                                TYPES
+--------------------------------------------------------------------*/
 
+/*--------------------------------------------------------------------
+                           MEMORY CONSTANTS
+--------------------------------------------------------------------*/
+
+/*--------------------------------------------------------------------
+                              VARIABLES
+--------------------------------------------------------------------*/
+
+/*--------------------------------------------------------------------
+                                MACROS
+--------------------------------------------------------------------*/
+
+/*--------------------------------------------------------------------
+                              PROCEDURES
+--------------------------------------------------------------------*/
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       ST7789VW::ST7789VW (constructor)
+*
+*   DESCRIPTION:
+*       ST7789VW class constructor
+*
+*********************************************************************/
 ST7789VW::ST7789VW(spi_inst_t* spi, DisplayProperties props, uint cs_pin, uint dc_pin, uint rst_pin, uint bl_pin)
-    : _spi(spi), _props(props), _default_props(props), _cs_pin(cs_pin), _dc_pin(dc_pin), _rst_pin(rst_pin), _bl_pin(bl_pin), _last_x(0), _last_y(0) {}
+    : _spi(spi), _props(props), _default_props(props), _cs_pin(cs_pin), _dc_pin(dc_pin), _rst_pin(rst_pin), _bl_pin(bl_pin), _last_x(0), _last_y(0)
+    {
+    }
 
-void ST7789VW::init() {
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       ST7789VW::~ST7789VW (deconstructor)
+*
+*   DESCRIPTION:
+*       ST7789VW class deconstructor
+*
+*********************************************************************/
+ST7789VW::~ST7789VW( void )
+    {
+    }
+
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       ST7789VW::init
+*
+*   DESCRIPTION:
+*       Initializes the display
+*
+*********************************************************************/
+void ST7789VW::init()
+    {
     gpio_init(_cs_pin);
     gpio_set_dir(_cs_pin, GPIO_OUT);
     gpio_put(_cs_pin, 1);
@@ -58,9 +129,19 @@ void ST7789VW::init() {
     sendCommand(ST7789VW_CMD::INVON);
     sendCommand(ST7789VW_CMD::DISPON);
     sleep_ms(50);
-}
+    }
 
-void ST7789VW::setWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       ST7789VW::setWindow
+*
+*   DESCRIPTION:
+*       Sets the drawing window
+*
+*********************************************************************/
+void ST7789VW::setWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
+    {
     uint16_t x_start = x + _props.x_offset;
     uint16_t y_start = y + _props.y_offset;
     uint16_t x_end = x + width - 1 + _props.x_offset;
@@ -75,15 +156,35 @@ void ST7789VW::setWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t height
     sendData(raset_data, sizeof(raset_data));
 
     sendCommand(ST7789VW_CMD::RAMWR);
-}
+    }
 
-void ST7789VW::drawPixel(uint16_t x, uint16_t y, uint16_t color) {
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       ST7789VW::drawPixel
+*
+*   DESCRIPTION:
+*       Draws a single pixel
+*
+*********************************************************************/
+void ST7789VW::drawPixel(uint16_t x, uint16_t y, uint16_t color)
+    {
     setWindow(x, y, 1, 1);
     uint8_t pixel_data[] = {(uint8_t)(color >> 8), (uint8_t)color};
     sendData(pixel_data, sizeof(pixel_data));
-}
+    }
 
-void ST7789VW::fill(uint16_t color) {
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       ST7789VW::fill
+*
+*   DESCRIPTION:
+*       Fills the screen with a color
+*
+*********************************************************************/
+void ST7789VW::fill(uint16_t color)
+    {
     setWindow(0, 0, _props.width, _props.height);
     uint32_t num_pixels = _props.width * _props.height;
     uint8_t pixel_data[] = {(uint8_t)(color >> 8), (uint8_t)color};
@@ -91,9 +192,19 @@ void ST7789VW::fill(uint16_t color) {
     for (uint32_t i = 0; i < num_pixels; ++i) {
         sendData(pixel_data, sizeof(pixel_data));
     }
-}
+    }
 
-void ST7789VW::drawChar(uint16_t x, uint16_t y, char c, uint16_t color) {
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       ST7789VW::drawChar
+*
+*   DESCRIPTION:
+*       Draws a single character
+*
+*********************************************************************/
+void ST7789VW::drawChar(uint16_t x, uint16_t y, char c, uint16_t color)
+    {
     if (x > _props.width - 8 || y > _props.height - 8) {
         return;
     }
@@ -106,44 +217,103 @@ void ST7789VW::drawChar(uint16_t x, uint16_t y, char c, uint16_t color) {
             }
         }
     }
-}
+    }
 
-void ST7789VW::drawText(uint16_t x, uint16_t y, const char* text, uint16_t color) {
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       ST7789VW::drawText
+*
+*   DESCRIPTION:
+*       Draws a string of text
+*
+*********************************************************************/
+void ST7789VW::drawText(uint16_t x, uint16_t y, const char* text, uint16_t color)
+    {
     int i = 0;
     while (text[i]) {
         drawChar(x + (i * 8), y, text[i], color);
         i++;
     }
-}
+    }
 
-void ST7789VW::sendCommand(ST7789VW_CMD cmd) {
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       ST7789VW::sendCommand
+*
+*   DESCRIPTION:
+*       Sends a command to the display
+*
+*********************************************************************/
+void ST7789VW::sendCommand(ST7789VW_CMD cmd)
+    {
     uint8_t cmd_val = static_cast<uint8_t>(cmd);
     gpio_put(_cs_pin, 0);
     gpio_put(_dc_pin, 0);
     spi_write_blocking(_spi, &cmd_val, 1);
     gpio_put(_cs_pin, 1);
-}
+    }
 
-void ST7789VW::sendData(const uint8_t* data, size_t len) {
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       ST7789VW::sendData
+*
+*   DESCRIPTION:
+*       Sends data to the display
+*
+*********************************************************************/
+void ST7789VW::sendData(const uint8_t* data, size_t len)
+    {
     gpio_put(_cs_pin, 0);
     gpio_put(_dc_pin, 1);
     spi_write_blocking(_spi, data, len);
     gpio_put(_cs_pin, 1);
-}
+    }
 
-void ST7789VW::reset() {
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       ST7789VW::reset
+*
+*   DESCRIPTION:
+*       Resets the display
+*
+*********************************************************************/
+void ST7789VW::reset()
+    {
     gpio_put(_rst_pin, 0);
     sleep_ms(10);
     gpio_put(_rst_pin, 1);
     sleep_ms(120);
-}
+    }
 
-void ST7789VW::clear_screen() {
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       ST7789VW::clear_screen
+*
+*   DESCRIPTION:
+*       Clears the screen
+*
+*********************************************************************/
+void ST7789VW::clear_screen()
+    {
     fill(0x0000); //black color
-}
+    }
 
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       ST7789VW::write_string_pos
+*
+*   DESCRIPTION:
+*       Writes a string at a specific position
+*
+*********************************************************************/
 bool ST7789VW::write_string_pos(uint16_t x, uint16_t y, const char* text, uint16_t color, bool word_wrap)
-{
+    {
     uint16_t current_x = x;
     uint16_t current_y = y;
     int i = 0;
@@ -185,10 +355,19 @@ bool ST7789VW::write_string_pos(uint16_t x, uint16_t y, const char* text, uint16
     _last_x = current_x;
     _last_y = current_y;
     return true;
-}
+    }
 
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       ST7789VW::write_string
+*
+*   DESCRIPTION:
+*       Writes a string
+*
+*********************************************************************/
 bool ST7789VW::write_string(const char* text, uint16_t color, bool newline, bool word_wrap)
-{
+    {
     uint16_t start_x = _last_x;
     uint16_t start_y = _last_y;
 
@@ -198,9 +377,19 @@ bool ST7789VW::write_string(const char* text, uint16_t color, bool newline, bool
     }
 
     return write_string_pos(start_x, start_y, text, color, word_wrap);
-}
+    }
 
-void ST7789VW::set_rotation(Rotation rotation) {
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       ST7789VW::set_rotation
+*
+*   DESCRIPTION:
+*       Sets the display rotation
+*
+*********************************************************************/
+void ST7789VW::set_rotation(Rotation rotation)
+    {
     _rotation = rotation;
     uint8_t madctl_data;
 
@@ -208,7 +397,7 @@ void ST7789VW::set_rotation(Rotation rotation) {
         case Rotation::ROTATION_0:
             madctl_data = 0x00;
             _props.width = _default_props.width;
-            _props.height = _default_props.height;
+            _props.height =_default_props.height;
             _props.x_offset = _default_props.x_offset;
             _props.y_offset = _default_props.y_offset;
             break;
@@ -237,9 +426,19 @@ void ST7789VW::set_rotation(Rotation rotation) {
 
     sendCommand(ST7789VW_CMD::MADCTL);
     sendData(&madctl_data, 1);
-}
+    }
 
-int main() {
+/*********************************************************************
+*
+*   PROCEDURE NAME:
+*       main
+*
+*   DESCRIPTION:
+*       Main function
+*
+*********************************************************************/
+int main()
+    {
     stdio_init_all();
 
     spi_init(SPI_PORT, 1000 * 1000);
@@ -249,7 +448,7 @@ int main() {
 
 
 
-
+//testing stuff
 int rot_var = (int)ST7789VW::Rotation::ROTATION_0;
 
 while(1)
@@ -271,7 +470,7 @@ while(1)
     display.init();
     display.set_rotation( ST7789VW::Rotation::ROTATION_90 );
     display.fill( 0x0000 );
-    display.write_string("Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true, true);// this works 
+    display.write_string("Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true, true);// this works
     display.write_string("Hello, World2! This is a very long string that should wrap around to the next line.", 0xFFFF, true, true);
     sleep_ms(100);
     }
@@ -313,33 +512,33 @@ while(1)
     //     // display.fill(0x0000);
     //     display.clear_screen();
     //     sleep_ms(100);
-    //     // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works 
-    //     display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
+    //     // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works
+    //     display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works
     //     sleep_ms(2000);
 
     //     display.set_rotation(ST7789VW::Rotation::ROTATION_90);
     //     display.clear_screen();
     //     sleep_ms(100);
-    //     // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works 
-    //     display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
+    //     // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works
+    //     display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works
     //     sleep_ms(2000); //doesnt
 
     //     display.set_rotation(ST7789VW::Rotation::ROTATION_180);
     //     display.clear_screen();
     //     sleep_ms(100);
-    //     // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works 
-    //     display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
+    //     // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works
+    //     display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works
     //     sleep_ms(2000);
 
     //     display.set_rotation(ST7789VW::Rotation::ROTATION_270);
     //     display.clear_screen();
     //     sleep_ms(100);
-    //     // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works 
-    //     display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works 
+    //     // display.write_string(0, 2, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true);// this works
+    //     display.write_string(0, 0, "Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, false);// this works
     //     sleep_ms(2000);
 
 
     // }
 
     return 0;
-}
+    }
