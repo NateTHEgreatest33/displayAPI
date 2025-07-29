@@ -6,7 +6,7 @@
 *   DESCRIPTION:
 *       API for ST7789VW display
 *
-*   Copyright 2023 Nate Lenze
+*   Copyright 2025 Nate Lenze
 *
 *********************************************************************/
 
@@ -431,6 +431,25 @@ void ST7789VW::set_rotation(Rotation rotation)
 /*********************************************************************
 *
 *   PROCEDURE NAME:
+*       ST7789VW::toggleDisplay
+*
+*   DESCRIPTION:
+*       Toggles the display on or off
+*
+*********************************************************************/
+void ST7789VW::toggleDisplay(bool on)
+    {
+    if (on) {
+        sendCommand(ST7789VW_CMD::DISPON);
+    } else {
+        sendCommand(ST7789VW_CMD::DISPOFF);
+    }
+    }
+
+
+/*********************************************************************
+*
+*   PROCEDURE NAME:
 *       main
 *
 *   DESCRIPTION:
@@ -453,15 +472,15 @@ int rot_var = (int)ST7789VW::Rotation::ROTATION_0;
 
 while(1)
     {
-    {
-    DisplayProperties props1 = {240, 320, 240, 320, 0, 0};
-    ST7789VW display1(SPI_PORT, props1, PIN_CS, PIN_DC, PIN_RST, PIN_BL);
-    display1.init();
-    sleep_ms(1000);
-    display1.set_rotation( ST7789VW::Rotation::ROTATION_0 );
-    display1.fill( 0xFFFF ); //fill entire map white
-    sleep_ms(100);
-    }
+    // {
+    // DisplayProperties props1 = {240, 320, 240, 320, 0, 0};
+    // ST7789VW display1(SPI_PORT, props1, PIN_CS, PIN_DC, PIN_RST, PIN_BL);
+    // display1.init();
+    // sleep_ms(1000);
+    // display1.set_rotation( ST7789VW::Rotation::ROTATION_0 );
+    // display1.fill( 0xF800 ); //fill entire map white
+    // sleep_ms(100);
+    // }
 
 
     {
@@ -472,7 +491,22 @@ while(1)
     display.fill( 0x0000 );
     display.write_string("Hello, World! This is a very long string that should wrap around to the next line.", 0xFFFF, true, true);// this works
     display.write_string("Hello, World2! This is a very long string that should wrap around to the next line.", 0xFFFF, true, true);
-    sleep_ms(100);
+    sleep_ms(1000);
+
+
+    display.toggleDisplay(false);
+    display.clear_screen();
+    display.fill(0xF800);
+    display.toggleDisplay(true);
+    sleep_ms(1000);
+    display.toggleDisplay(false);
+    display.fill(0x0000);
+    display.toggleDisplay(true);
+
+
+
+
+
     }
 
 //rotation 90 (53,40)

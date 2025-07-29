@@ -5,7 +5,7 @@
 *   HEADER:
 *       header file for displayAPI
 *
-*   Copyright 2023 Nate Lenze
+*   Copyright 2025 Nate Lenze
 *
 *********************************************************************/
 /*--------------------------------------------------------------------
@@ -25,12 +25,25 @@
 /*--------------------------------------------------------------------
                             TYPES/ENUMS
 --------------------------------------------------------------------*/
+enum class Colors : uint16_t {
+    BLACK = 0x0000,
+    WHITE = 0xFFFF,
+    RED = 0xF800,
+    GREEN = 0x07E0,
+    BLUE = 0x001F,
+    CYAN = 0x07FF,
+    MAGENTA = 0xF81F,
+    YELLOW = 0xFFE0,
+    ORANGE = 0xFC00
+};
+
 enum class ST7789VW_CMD : uint8_t {
     SWRESET = 0x01,
     SLPOUT = 0x11,
     NORON = 0x13,
     INVOFF = 0x20,
     INVON = 0x21,
+    DISPOFF = 0x28,
     DISPON = 0x29,
     CASET = 0x2A,
     RASET = 0x2B,
@@ -75,6 +88,7 @@ class ST7789VW {
         void init();
         void fill(uint16_t color);
         void clear_screen(void);
+        void toggleDisplay(bool on);
         bool write_string_pos(uint16_t x, uint16_t y, const char* text, uint16_t color, bool word_wrap = false);
         bool write_string(const char* text, uint16_t color, bool newline = false, bool word_wrap = false);
 
