@@ -100,6 +100,9 @@ class ST7789VW {
         };
         void set_rotation(Rotation rotation);
 
+        ST7789VW (const ST7789VW&) = delete;
+        ST7789VW& operator= (const ST7789VW&) = delete;
+
     private:
         void setWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t height);
         void drawPixel(uint16_t x, uint16_t y, uint16_t color);
