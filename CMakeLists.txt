@@ -17,6 +17,8 @@ pico_sdk_init()
 add_executable(displayAPI
     displayAPI.cpp
     font.cpp
+
+    main.cpp
 )
 
 # Add pico_stdlib library and hardware libraries
